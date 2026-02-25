@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ku" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سیستەمی گواستنەوەی ئۆتۆمبێل</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+    <style>
+        :root {
+            --primary: #3498db;
+            --success: #2ecc71;
+            --danger: #e74c3c;
+            --warning: #f1c40f;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+            color: var(--dark);
+        }
+
+        .container {
+            max-width: 950px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+        }
+
+        h2 { text-align: center; margin-bottom: 25px; color: var(--primary); }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        input, select {
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 15px;
+            outline: none;
+            transition: 0.3s;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        input:focus, select:focus { border-color: var(--primary); }
+
+        .button-bar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+            transition: 0.3s;
+            min-width: 120px;
+        }
+
+        .btn-save { background-color: var(--success); }
+        .btn-update { background-color: var(--warning); color: #333; }
+        .btn-delete { background-color: var(--danger); }
+        .btn-search { background-color: var(--primary); }
+        .btn-clear { background-color: #95a5a6; }
+
+        button:hover { opacity: 0.8; transform: translateY(-2px); }
+
+        .table-section {
+            overflow-x: auto;
+            border-radius: 10px;
+            border: 1px solid #eee;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+
+        th { background-color: var(--light); font-weight: bold; }
+
+        tr:hover { background-color: #f9f9f9; cursor: pointer; }
+
+        .selected { background-color: #d1ecf1 !important; }
+        
+        .badge {
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .taxi { background: #f1c40f; color: black; }
+        .bus { background: #34495e; color: white; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>بەڕێوەبردنی گواستنەوەی ئۆتۆمبێل</h2>
+    
+    <div class="form-grid">
+        <input type="hidden" id="docId">
+        
+        <input type="text" id="carNumber" placeholder="ژمارەی ئۆتۆمبێل">
+
+        <select id="carLine">
+            <option value="" disabled selected>هێڵەکە هەڵبژێرە</option>
+            <option value="هەولێر">هەولێر</option>
+            <option value="کەرکوک">کەرکوک</option>
+            <option value="ڕانیە">ڕانیە</option>
+            <option value="قەڵادزێ">قەڵادزێ</option>
+            <option value="بغداد">بغداد</option>
+            <option value="چەمچەماڵ">چەمچەماڵ</option>
+            <option value="دووز">دووز</option>
+            <option value="کۆیە">کۆیە</option>
+        </select>
+
+        <select id="carPrice">
+            <option value="" disabled selected>نرخەکە هەڵبژێرە</option>
+            <option value="1000">1000</option>
+            <option value="2000">2000</option>
+            <option value="3000">3000</option>
+            <option value="4000">4000</option>
+            <option value="5000">5000</option>
+            <option value="6000">6000</option>
+            <option value="6500">6500</option>
+            <option value="10000">10000</option>
+            <option value="15000">15000</option>
+        </select>
+
+        <select id="carType">
+            <option value="" disabled selected>جۆری ئۆتۆمبێل</option>
+            <option value="تەکسی">تەکسی</option>
+            <option value="پاس">پاس</option>
+        </select>
+    </div>
+
+    <div class="button-bar">
+        <button class="btn-save" onclick="saveData()">خەزن کردن</button>
+        <button class="btn-update" onclick="updateData()">نوێکردنەوە</button>
+        <button class="btn-delete" onclick="deleteData()">سڕینەوە</button>
+        <button class="btn-search" onclick="searchData()">گەڕان</button>
+        <button class="btn-clear" onclick="clearInputs()">پاککردنەوە</button>
+    </div>
+
+    <div class="table-section">
+        <table>
+            <thead>
+                <tr>
+                    <th>ژمارەی ئۆتۆمبێل</th>
+                    <th>هێڵ</th>
+                    <th>نرخ</th>
+                    <th>جۆری ئۆتۆمبێل</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // --- دەستپێکردنی فایەربەیس ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyCuUstd-6d0E-EbmQipv2mWk-bA55ajpQ0",
+        authDomain: "car-system-4594d.firebaseapp.com",
+        projectId: "car-system-4594d",
+        storageBucket: "car-system-4594d.firebasestorage.app",
+        messagingSenderId: "719030469585",
+        appId: "1:719030469585:web:7a23645b9e684b727dd6f0"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // --- فرمانەکان ---
+
+    // ١. خەزن کردن
+    async function saveData() {
+        const num = document.getElementById('carNumber').value.trim();
+        const line = document.getElementById('carLine').value;
+        const price = document.getElementById('carPrice').value;
+        const type = document.getElementById('carType').value;
+
+        if(!num || !line || !price || !type) return alert("تکایە هەموو خانەکان پڕ بکەرەوە");
+
+        try {
+            await db.collection("Cars").add({
+                number: num,
+                line: line,
+                price: price,
+                type: type,
+                time: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            clearInputs();
+        } catch (e) { alert("هەڵە: " + e.message); }
+    }
+
+    // ٢. نیشاندانی داتا (بە شێوەی ڕاستەوخۆ)
+    function loadRealtimeData() {
+        db.collection("Cars").orderBy("time", "desc").onSnapshot((querySnapshot) => {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = "";
+            querySnapshot.forEach((doc) => {
+                renderRow(doc);
+            });
+        });
+    }
+    loadRealtimeData();
+
+    function renderRow(doc) {
+        const car = doc.data();
+        const tbody = document.getElementById('tableBody');
+        const typeClass = car.type === 'تەکسی' ? 'taxi' : 'bus';
+        tbody.innerHTML += `
+            <tr onclick="selectRow('${doc.id}', '${car.number}', '${car.line}', '${car.price}', '${car.type}', this)">
+                <td><b>${car.number}</b></td>
+                <td>${car.line}</td>
+                <td>${car.price} دینار</td>
+                <td><span class="badge ${typeClass}">${car.type}</span></td>
+            </tr>
+        `;
+    }
+
+    // ٣. هەڵبژاردنی ڕیز
+    function selectRow(id, num, line, price, type, el) {
+        document.getElementById('docId').value = id;
+        document.getElementById('carNumber').value = num;
+        document.getElementById('carLine').value = line;
+        document.getElementById('carPrice').value = price;
+        document.getElementById('carType').value = type;
+
+        const rows = document.querySelectorAll('tr');
+        rows.forEach(r => r.classList.remove('selected'));
+        el.classList.add('selected');
+    }
+
+    // ٤. نوێکردنەوە
+    async function updateData() {
+        const id = document.getElementById('docId').value;
+        if(!id) return alert("سەرەتا ئۆتۆمبێلێک لە خشتەکە هەڵبژێرە");
+
+        await db.collection("Cars").doc(id).update({
+            number: document.getElementById('carNumber').value.trim(),
+            line: document.getElementById('carLine').value,
+            price: document.getElementById('carPrice').value,
+            type: document.getElementById('carType').value
+        });
+        alert("نوێکرایەوە");
+        clearInputs();
+    }
+
+    // ٥. سڕینەوە
+    async function deleteData() {
+        const id = document.getElementById('docId').value;
+        if(!id) return alert("سەرەتا دانەیەک هەڵبژێرە");
+
+        if(confirm("دڵنیای لە سڕینەوە؟")) {
+            await db.collection("Cars").doc(id).delete();
+            clearInputs();
+        }
+    }
+
+    // ٦. گەڕان بە ژمارە و هێڵ
+    async function searchData() {
+        const num = document.getElementById('carNumber').value.trim();
+        const line = document.getElementById('carLine').value;
+        const tbody = document.getElementById('tableBody');
+
+        let query = db.collection("Cars");
+
+        if (num) {
+            query = query.where("number", "==", num);
+        }
+        
+        if (line) {
+            query = query.where("line", "==", line);
+        }
+
+        if (!num && !line) {
+            return alert("تکایە ژمارەی ئۆتۆمبێل بنوسە یان هێڵەکە هەڵبژێرە بۆ گەڕان");
+        }
+
+        try {
+            const snapshot = await query.get();
+            tbody.innerHTML = "";
+            
+            if (snapshot.empty) {
+                alert("هیچ ئەنجامێک نەدۆزرایەوە");
+                return;
+            }
+
+            snapshot.forEach((doc) => {
+                renderRow(doc);
+            });
+        } catch (error) {
+            console.error("Error searching: ", error);
+            alert("هەڵەیەک ڕوویدا لە کاتی گەڕان");
+        }
+    }
+
+    function clearInputs() {
+        document.getElementById('docId').value = "";
+        document.getElementById('carNumber').value = "";
+        document.getElementById('carLine').selectedIndex = 0;
+        document.getElementById('carPrice').selectedIndex = 0;
+        document.getElementById('carType').selectedIndex = 0;
+        const rows = document.querySelectorAll('tr');
+        rows.forEach(r => r.classList.remove('selected'));
+        // دووبارە بارکردنەوەی هەموو داتاکان دوای پاککردنەوە
+        loadRealtimeData();
+    }
+</script>
+
+</body>
+</html>
