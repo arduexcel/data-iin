@@ -88,6 +88,7 @@
             overflow-x: auto;
             border-radius: 10px;
             border: 1px solid #eee;
+            margin-top: 20px;
         }
 
         table {
@@ -198,7 +199,7 @@
 
     // --- فرمانەکان ---
 
-    // ١. خەزن کردن
+    // ١. خەزن کردن (بە پشکنینی دووبارە نەبوونەوە)
     async function saveData() {
         const num = document.getElementById('carNumber').value.trim();
         const line = document.getElementById('carLine').value;
@@ -208,6 +209,16 @@
         if(!num || !line || !price || !type) return alert("تکایە هەموو خانەکان پڕ بکەرەوە");
 
         try {
+            // پشکنینی دووبارەبوونەوە: ئایا هەمان ژمارە لە هەمان هێڵدا هەیە؟
+            const duplicateCheck = await db.collection("Cars")
+                .where("number", "==", num)
+                .where("line", "==", line)
+                .get();
+
+            if (!duplicateCheck.empty) {
+                return alert("ئەم ژمارەیە پێشتر لە هێڵی (" + line + ") تۆمار کراوە!");
+            }
+
             await db.collection("Cars").add({
                 number: num,
                 line: line,
@@ -215,6 +226,7 @@
                 type: type,
                 time: firebase.firestore.FieldValue.serverTimestamp()
             });
+            alert("بە سەرکەوتوویی خەزن کرا");
             clearInputs();
         } catch (e) { alert("هەڵە: " + e.message); }
     }
@@ -261,16 +273,34 @@
     // ٤. نوێکردنەوە
     async function updateData() {
         const id = document.getElementById('docId').value;
+        const num = document.getElementById('carNumber').value.trim();
+        const line = document.getElementById('carLine').value;
+
         if(!id) return alert("سەرەتا ئۆتۆمبێلێک لە خشتەکە هەڵبژێرە");
 
-        await db.collection("Cars").doc(id).update({
-            number: document.getElementById('carNumber').value.trim(),
-            line: document.getElementById('carLine').value,
-            price: document.getElementById('carPrice').value,
-            type: document.getElementById('carType').value
-        });
-        alert("نوێکرایەوە");
-        clearInputs();
+        try {
+            // لە کاتی نوێکردنەوەش پشکنین دەکەین، بەڵام دەبێت دڵنیابین کە هەمان دۆکیومێنت نییە
+            const duplicateCheck = await db.collection("Cars")
+                .where("number", "==", num)
+                .where("line", "==", line)
+                .get();
+            
+            let isDuplicate = false;
+            duplicateCheck.forEach(doc => {
+                if(doc.id !== id) isDuplicate = true;
+            });
+
+            if(isDuplicate) return alert("ئەم گۆڕانکارییە نابێت چونکە ئەم ژمارەیە پێشتر لەم هێڵەدا هەیە!");
+
+            await db.collection("Cars").doc(id).update({
+                number: num,
+                line: line,
+                price: document.getElementById('carPrice').value,
+                type: document.getElementById('carType').value
+            });
+            alert("نوێکرایەوە");
+            clearInputs();
+        } catch (e) { alert("هەڵە: " + e.message); }
     }
 
     // ٥. سڕینەوە
@@ -284,42 +314,24 @@
         }
     }
 
-    // ٦. گەڕان بە ژمارە و هێڵ
+    // ٦. گەڕان
     async function searchData() {
         const num = document.getElementById('carNumber').value.trim();
         const line = document.getElementById('carLine').value;
         const tbody = document.getElementById('tableBody');
 
         let query = db.collection("Cars");
+        if (num) query = query.where("number", "==", num);
+        if (line) query = query.where("line", "==", line);
 
-        if (num) {
-            query = query.where("number", "==", num);
-        }
-        
-        if (line) {
-            query = query.where("line", "==", line);
-        }
-
-        if (!num && !line) {
-            return alert("تکایە ژمارەی ئۆتۆمبێل بنوسە یان هێڵەکە هەڵبژێرە بۆ گەڕان");
-        }
+        if (!num && !line) return alert("خانەیەکی گەڕان پڕ بکەرەوە");
 
         try {
             const snapshot = await query.get();
             tbody.innerHTML = "";
-            
-            if (snapshot.empty) {
-                alert("هیچ ئەنجامێک نەدۆزرایەوە");
-                return;
-            }
-
-            snapshot.forEach((doc) => {
-                renderRow(doc);
-            });
-        } catch (error) {
-            console.error("Error searching: ", error);
-            alert("هەڵەیەک ڕوویدا لە کاتی گەڕان");
-        }
+            if (snapshot.empty) return alert("نەدۆزرایەوە");
+            snapshot.forEach((doc) => renderRow(doc));
+        } catch (error) { alert("هەڵە لە گەڕان"); }
     }
 
     function clearInputs() {
@@ -330,7 +342,6 @@
         document.getElementById('carType').selectedIndex = 0;
         const rows = document.querySelectorAll('tr');
         rows.forEach(r => r.classList.remove('selected'));
-        // دووبارە بارکردنەوەی هەموو داتاکان دوای پاککردنەوە
         loadRealtimeData();
     }
 </script>
