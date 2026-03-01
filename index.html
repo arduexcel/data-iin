@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>سیستەمی گواستنەوەی ئۆتۆمبێل</title>
+    <title>سیستەمی داخڵکردنی ئۆتۆمبێل</title>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
@@ -24,110 +24,82 @@
             margin: 0;
             padding: 20px;
             color: var(--dark);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
         }
 
         .container {
-            max-width: 950px;
-            margin: auto;
+            max-width: 600px;
+            width: 100%;
             background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
         }
 
-        h2 { text-align: center; margin-bottom: 25px; color: var(--primary); }
+        h2 { text-align: center; margin-bottom: 30px; color: var(--dark); border-bottom: 3px solid var(--primary); padding-bottom: 10px; }
 
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 25px;
+        .form-group {
+            margin-bottom: 20px;
         }
+
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; }
 
         input, select {
-            padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 15px;
+            padding: 15px;
+            border: 2px solid #eee;
+            border-radius: 12px;
+            font-size: 16px;
             outline: none;
             transition: 0.3s;
             width: 100%;
             box-sizing: border-box;
+            background: #f9f9f9;
         }
 
-        input:focus, select:focus { border-color: var(--primary); }
+        input:focus, select:focus { border-color: var(--primary); background: white; }
 
         .button-bar {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 30px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 30px;
         }
 
         button {
-            padding: 12px 20px;
+            padding: 15px;
             border: none;
-            border-radius: 8px;
+            border-radius: 12px;
             cursor: pointer;
             font-weight: bold;
             color: white;
             transition: 0.3s;
-            min-width: 120px;
+            font-size: 16px;
         }
 
-        .btn-save { background-color: var(--success); }
-        .btn-update { background-color: var(--warning); color: #333; }
-        .btn-delete { background-color: var(--danger); }
-        .btn-search { background-color: var(--primary); }
+        .btn-save { background-color: var(--success); grid-column: span 2; }
         .btn-clear { background-color: #95a5a6; }
+        .btn-search { background-color: var(--primary); }
 
-        button:hover { opacity: 0.8; transform: translateY(-2px); }
+        button:hover { opacity: 0.9; transform: translateY(-2px); }
+        button:active { transform: translateY(0); }
 
-        .table-section {
-            overflow-x: auto;
-            border-radius: 10px;
-            border: 1px solid #eee;
-            margin-top: 20px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th, td {
-            padding: 15px;
-            text-align: center;
-            border-bottom: 1px solid #eee;
-        }
-
-        th { background-color: var(--light); font-weight: bold; }
-
-        tr:hover { background-color: #f9f9f9; cursor: pointer; }
-
-        .selected { background-color: #d1ecf1 !important; }
-        
-        .badge {
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-        .taxi { background: #f1c40f; color: black; }
-        .bus { background: #34495e; color: white; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>بەڕێوەبردنی گواستنەوەی ئۆتۆمبێل</h2>
+    <h2>داخڵکردنی زانیاری ئۆتۆمبێل</h2>
     
-    <div class="form-grid">
-        <input type="hidden" id="docId">
-        
-        <input type="text" id="carNumber" placeholder="ژمارەی ئۆتۆمبێل">
+    <div class="form-group">
+        <label>ژمارەی ئۆتۆمبێل:</label>
+        <input type="text" id="carNumber" placeholder="نمونە: 12345 هـ">
+    </div>
 
+    <div class="form-group">
+        <label>هێڵ (مسار):</label>
         <select id="carLine">
             <option value="" disabled selected>هێڵەکە هەڵبژێرە</option>
             <option value="هەولێر">هەولێر</option>
@@ -139,9 +111,12 @@
             <option value="دووز">دووز</option>
             <option value="کۆیە">کۆیە</option>
         </select>
+    </div>
 
+    <div class="form-group">
+        <label>نرخی وەسڵ:</label>
         <select id="carPrice">
-            <option value="" disabled selected>نرخەکە هەڵبژێرە</option>
+            <option value="" disabled selected>نرخ دیاری بکە</option>
             <option value="1000">1000</option>
             <option value="2000">2000</option>
             <option value="3000">3000</option>
@@ -152,39 +127,26 @@
             <option value="10000">10000</option>
             <option value="15000">15000</option>
         </select>
+    </div>
 
+    <div class="form-group">
+        <label>جۆری ئۆتۆمبێل:</label>
         <select id="carType">
-            <option value="" disabled selected>جۆری ئۆتۆمبێل</option>
+            <option value="" disabled selected>جۆرەکە دیاری بکە</option>
             <option value="تەکسی">تەکسی</option>
             <option value="پاس">پاس</option>
         </select>
     </div>
 
     <div class="button-bar">
-        <button class="btn-save" onclick="saveData()">خەزن کردن</button>
-        <button class="btn-update" onclick="updateData()">نوێکردنەوە</button>
-        <button class="btn-delete" onclick="deleteData()">سڕینەوە</button>
-        <button class="btn-search" onclick="searchData()">گەڕان</button>
-        <button class="btn-clear" onclick="clearInputs()">پاککردنەوە</button>
-    </div>
-
-    <div class="table-section">
-        <table>
-            <thead>
-                <tr>
-                    <th>ژمارەی ئۆتۆمبێل</th>
-                    <th>هێڵ</th>
-                    <th>نرخ</th>
-                    <th>جۆری ئۆتۆمبێل</th>
-                </tr>
-            </thead>
-            <tbody id="tableBody"></tbody>
-        </table>
+        <button class="btn-save" onclick="saveData()">💾 خەزنکردنی زانیاری</button>
+        <button class="btn-search" onclick="searchCar()">🔍 گەڕان</button>
+        <button class="btn-clear" onclick="clearInputs()">✨ پاککردنەوە</button>
     </div>
 </div>
 
 <script>
-    // --- دەستپێکردنی فایەربەیس ---
+    // --- Firebase Configuration ---
     const firebaseConfig = {
         apiKey: "AIzaSyCuUstd-6d0E-EbmQipv2mWk-bA55ajpQ0",
         authDomain: "car-system-4594d.firebaseapp.com",
@@ -197,9 +159,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // --- فرمانەکان ---
-
-    // ١. خەزن کردن (بە پشکنینی دووبارە نەبوونەوە)
+    // ١. خەزن کردن بە پشکنینی دووبارە نەبوونەوە
     async function saveData() {
         const num = document.getElementById('carNumber').value.trim();
         const line = document.getElementById('carLine').value;
@@ -209,14 +169,14 @@
         if(!num || !line || !price || !type) return alert("تکایە هەموو خانەکان پڕ بکەرەوە");
 
         try {
-            // پشکنینی دووبارەبوونەوە: ئایا هەمان ژمارە لە هەمان هێڵدا هەیە؟
+            // پشکنین: ئایا ئەم ژمارەیە پێشتر لەم هێڵەدا هەبووە؟
             const duplicateCheck = await db.collection("Cars")
                 .where("number", "==", num)
                 .where("line", "==", line)
                 .get();
 
             if (!duplicateCheck.empty) {
-                return alert("ئەم ژمارەیە پێشتر لە هێڵی (" + line + ") تۆمار کراوە!");
+                return alert("⚠️ ئاگاداری: ئەم ئۆتۆمبێلە پێشتر لە هێڵی (" + line + ") تۆمار کراوە!");
             }
 
             await db.collection("Cars").add({
@@ -226,123 +186,36 @@
                 type: type,
                 time: firebase.firestore.FieldValue.serverTimestamp()
             });
-            alert("بە سەرکەوتوویی خەزن کرا");
-            clearInputs();
-        } catch (e) { alert("هەڵە: " + e.message); }
-    }
-
-    // ٢. نیشاندانی داتا (بە شێوەی ڕاستەوخۆ)
-    function loadRealtimeData() {
-        db.collection("Cars").orderBy("time", "desc").onSnapshot((querySnapshot) => {
-            const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = "";
-            querySnapshot.forEach((doc) => {
-                renderRow(doc);
-            });
-        });
-    }
-    loadRealtimeData();
-
-    function renderRow(doc) {
-        const car = doc.data();
-        const tbody = document.getElementById('tableBody');
-        const typeClass = car.type === 'تەکسی' ? 'taxi' : 'bus';
-        tbody.innerHTML += `
-            <tr onclick="selectRow('${doc.id}', '${car.number}', '${car.line}', '${car.price}', '${car.type}', this)">
-                <td><b>${car.number}</b></td>
-                <td>${car.line}</td>
-                <td>${car.price} دینار</td>
-                <td><span class="badge ${typeClass}">${car.type}</span></td>
-            </tr>
-        `;
-    }
-
-    // ٣. هەڵبژاردنی ڕیز
-    function selectRow(id, num, line, price, type, el) {
-        document.getElementById('docId').value = id;
-        document.getElementById('carNumber').value = num;
-        document.getElementById('carLine').value = line;
-        document.getElementById('carPrice').value = price;
-        document.getElementById('carType').value = type;
-
-        const rows = document.querySelectorAll('tr');
-        rows.forEach(r => r.classList.remove('selected'));
-        el.classList.add('selected');
-    }
-
-    // ٤. نوێکردنەوە
-    async function updateData() {
-        const id = document.getElementById('docId').value;
-        const num = document.getElementById('carNumber').value.trim();
-        const line = document.getElementById('carLine').value;
-
-        if(!id) return alert("سەرەتا ئۆتۆمبێلێک لە خشتەکە هەڵبژێرە");
-
-        try {
-            // لە کاتی نوێکردنەوەش پشکنین دەکەین، بەڵام دەبێت دڵنیابین کە هەمان دۆکیومێنت نییە
-            const duplicateCheck = await db.collection("Cars")
-                .where("number", "==", num)
-                .where("line", "==", line)
-                .get();
             
-            let isDuplicate = false;
-            duplicateCheck.forEach(doc => {
-                if(doc.id !== id) isDuplicate = true;
-            });
-
-            if(isDuplicate) return alert("ئەم گۆڕانکارییە نابێت چونکە ئەم ژمارەیە پێشتر لەم هێڵەدا هەیە!");
-
-            await db.collection("Cars").doc(id).update({
-                number: num,
-                line: line,
-                price: document.getElementById('carPrice').value,
-                type: document.getElementById('carType').value
-            });
-            alert("نوێکرایەوە");
+            alert("✅ بە سەرکەوتوویی خەزن کرا");
             clearInputs();
-        } catch (e) { alert("هەڵە: " + e.message); }
+        } catch (e) { alert("هەڵە ڕوویدا: " + e.message); }
     }
 
-    // ٥. سڕینەوە
-    async function deleteData() {
-        const id = document.getElementById('docId').value;
-        if(!id) return alert("سەرەتا دانەیەک هەڵبژێرە");
-
-        if(confirm("دڵنیای لە سڕینەوە؟")) {
-            await db.collection("Cars").doc(id).delete();
-            clearInputs();
-        }
-    }
-
-    // ٦. گەڕان
-    async function searchData() {
+    // ٢. گەڕان بۆ دڵنیابوونەوە لە زانیارییەکان
+    async function searchCar() {
         const num = document.getElementById('carNumber').value.trim();
-        const line = document.getElementById('carLine').value;
-        const tbody = document.getElementById('tableBody');
-
-        let query = db.collection("Cars");
-        if (num) query = query.where("number", "==", num);
-        if (line) query = query.where("line", "==", line);
-
-        if (!num && !line) return alert("خانەیەکی گەڕان پڕ بکەرەوە");
+        if(!num) return alert("بۆ گەڕان تەنها ژمارەی ئۆتۆمبێل بنوسە");
 
         try {
-            const snapshot = await query.get();
-            tbody.innerHTML = "";
-            if (snapshot.empty) return alert("نەدۆزرایەوە");
-            snapshot.forEach((doc) => renderRow(doc));
-        } catch (error) { alert("هەڵە لە گەڕان"); }
+            const snapshot = await db.collection("Cars").where("number", "==", num).get();
+            if (snapshot.empty) {
+                alert("ئەم ژمارەیە پێشتر تۆمار نەکراوە.");
+            } else {
+                const data = snapshot.docs[0].data();
+                document.getElementById('carLine').value = data.line;
+                document.getElementById('carPrice').value = data.price;
+                document.getElementById('carType').value = data.type;
+                alert("زانیارییەکانی ئەم ئۆتۆمبێلە دۆزرانەوە و پڕکرانەوە.");
+            }
+        } catch (e) { alert("هەڵە لە گەڕان"); }
     }
 
     function clearInputs() {
-        document.getElementById('docId').value = "";
         document.getElementById('carNumber').value = "";
         document.getElementById('carLine').selectedIndex = 0;
         document.getElementById('carPrice').selectedIndex = 0;
         document.getElementById('carType').selectedIndex = 0;
-        const rows = document.querySelectorAll('tr');
-        rows.forEach(r => r.classList.remove('selected'));
-        loadRealtimeData();
     }
 </script>
 
