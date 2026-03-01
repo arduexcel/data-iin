@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>سیستەمی داخڵکردنی ئۆتۆمبێل</title>
+    <title>سیستەمی کارگێڕی ئۆتۆمبێل</title>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
@@ -15,7 +15,6 @@
             --danger: #e74c3c;
             --warning: #f1c40f;
             --dark: #2c3e50;
-            --light: #ecf0f1;
         }
 
         body {
@@ -23,7 +22,6 @@
             background-color: #f0f2f5;
             margin: 0;
             padding: 20px;
-            color: var(--dark);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -31,77 +29,74 @@
         }
 
         .container {
-            max-width: 600px;
+            max-width: 500px;
             width: 100%;
             background: white;
-            padding: 40px;
+            padding: 30px;
             border-radius: 20px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.1);
         }
 
-        h2 { text-align: center; margin-bottom: 30px; color: var(--dark); border-bottom: 3px solid var(--primary); padding-bottom: 10px; }
+        h2 { text-align: center; color: var(--dark); margin-bottom: 25px; }
 
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #666; }
 
         input, select {
-            padding: 15px;
+            padding: 12px;
             border: 2px solid #eee;
-            border-radius: 12px;
+            border-radius: 10px;
             font-size: 16px;
-            outline: none;
-            transition: 0.3s;
             width: 100%;
             box-sizing: border-box;
-            background: #f9f9f9;
+            outline: none;
+            transition: 0.3s;
         }
 
-        input:focus, select:focus { border-color: var(--primary); background: white; }
+        input:focus { border-color: var(--primary); }
 
-        .button-bar {
+        .button-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-top: 30px;
+            gap: 10px;
+            margin-top: 20px;
         }
 
         button {
-            padding: 15px;
+            padding: 12px;
             border: none;
-            border-radius: 12px;
+            border-radius: 10px;
             cursor: pointer;
             font-weight: bold;
             color: white;
             transition: 0.3s;
-            font-size: 16px;
         }
 
         .btn-save { background-color: var(--success); grid-column: span 2; }
-        .btn-clear { background-color: #95a5a6; }
         .btn-search { background-color: var(--primary); }
+        .btn-clear { background-color: #95a5a6; }
+        .btn-update { background-color: var(--warning); color: #333; display: none; }
+        .btn-delete { background-color: var(--danger); display: none; }
 
-        button:hover { opacity: 0.9; transform: translateY(-2px); }
-        button:active { transform: translateY(0); }
-
+        button:hover { opacity: 0.9; transform: translateY(-1px); }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>داخڵکردنی زانیاری ئۆتۆمبێل</h2>
+    <h2>سەرپەرشتی ئۆتۆمبێل</h2>
     
+    <input type="hidden" id="docId">
+
     <div class="form-group">
         <label>ژمارەی ئۆتۆمبێل:</label>
-        <input type="text" id="carNumber" placeholder="نمونە: 12345 هـ">
+        <input type="text" id="carNumber" placeholder="ژمارەکە لێرە بنووسە...">
     </div>
 
     <div class="form-group">
-        <label>هێڵ (مسار):</label>
+        <label>هێڵ:</label>
         <select id="carLine">
-            <option value="" disabled selected>هێڵەکە هەڵبژێرە</option>
+            <option value="" disabled selected>هەڵبژێرە</option>
             <option value="هەولێر">هەولێر</option>
             <option value="کەرکوک">کەرکوک</option>
             <option value="ڕانیە">ڕانیە</option>
@@ -114,7 +109,7 @@
     </div>
 
     <div class="form-group">
-        <label>نرخی وەسڵ:</label>
+        <label>نرخ:</label>
         <select id="carPrice">
             <option value="" disabled selected>نرخ دیاری بکە</option>
             <option value="1000">1000</option>
@@ -130,7 +125,7 @@
     </div>
 
     <div class="form-group">
-        <label>جۆری ئۆتۆمبێل:</label>
+        <label>جۆر:</label>
         <select id="carType">
             <option value="" disabled selected>جۆرەکە دیاری بکە</option>
             <option value="تەکسی">تەکسی</option>
@@ -138,15 +133,16 @@
         </select>
     </div>
 
-    <div class="button-bar">
-        <button class="btn-save" onclick="saveData()">💾 خەزنکردنی زانیاری</button>
+    <div class="button-grid">
+        <button id="saveBtn" class="btn-save" onclick="saveData()">💾 خەزنکردن</button>
+        <button id="updateBtn" class="btn-update" onclick="updateData()">🔄 نوێکردنەوە</button>
+        <button id="deleteBtn" class="btn-delete" onclick="deleteData()">🗑️ سڕینەوە</button>
         <button class="btn-search" onclick="searchCar()">🔍 گەڕان</button>
         <button class="btn-clear" onclick="clearInputs()">✨ پاککردنەوە</button>
     </div>
 </div>
 
 <script>
-    // --- Firebase Configuration ---
     const firebaseConfig = {
         apiKey: "AIzaSyCuUstd-6d0E-EbmQipv2mWk-bA55ajpQ0",
         authDomain: "car-system-4594d.firebaseapp.com",
@@ -155,69 +151,80 @@
         messagingSenderId: "719030469585",
         appId: "1:719030469585:web:7a23645b9e684b727dd6f0"
     };
-
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // ١. خەزن کردن بە پشکنینی دووبارە نەبوونەوە
     async function saveData() {
         const num = document.getElementById('carNumber').value.trim();
         const line = document.getElementById('carLine').value;
         const price = document.getElementById('carPrice').value;
         const type = document.getElementById('carType').value;
 
-        if(!num || !line || !price || !type) return alert("تکایە هەموو خانەکان پڕ بکەرەوە");
+        if(!num || !line || !price || !type) return alert("خانەکان پڕ بکەرەوە");
 
-        try {
-            // پشکنین: ئایا ئەم ژمارەیە پێشتر لەم هێڵەدا هەبووە؟
-            const duplicateCheck = await db.collection("Cars")
-                .where("number", "==", num)
-                .where("line", "==", line)
-                .get();
+        const dup = await db.collection("Cars").where("number","==",num).where("line","==",line).get();
+        if(!dup.empty) return alert("ئەم ژمارەیە لەم هێڵەدا هەیە!");
 
-            if (!duplicateCheck.empty) {
-                return alert("⚠️ ئاگاداری: ئەم ئۆتۆمبێلە پێشتر لە هێڵی (" + line + ") تۆمار کراوە!");
-            }
-
-            await db.collection("Cars").add({
-                number: num,
-                line: line,
-                price: price,
-                type: type,
-                time: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            
-            alert("✅ بە سەرکەوتوویی خەزن کرا");
-            clearInputs();
-        } catch (e) { alert("هەڵە ڕوویدا: " + e.message); }
+        await db.collection("Cars").add({ number: num, line: line, price: price, type: type, time: firebase.firestore.FieldValue.serverTimestamp() });
+        alert("خەزن کرا");
+        clearInputs();
     }
 
-    // ٢. گەڕان بۆ دڵنیابوونەوە لە زانیارییەکان
     async function searchCar() {
         const num = document.getElementById('carNumber').value.trim();
-        if(!num) return alert("بۆ گەڕان تەنها ژمارەی ئۆتۆمبێل بنوسە");
+        if(!num) return alert("ژمارە بنووسە");
 
-        try {
-            const snapshot = await db.collection("Cars").where("number", "==", num).get();
-            if (snapshot.empty) {
-                alert("ئەم ژمارەیە پێشتر تۆمار نەکراوە.");
-            } else {
-                const data = snapshot.docs[0].data();
-                document.getElementById('carLine').value = data.line;
-                document.getElementById('carPrice').value = data.price;
-                document.getElementById('carType').value = data.type;
-                alert("زانیارییەکانی ئەم ئۆتۆمبێلە دۆزرانەوە و پڕکرانەوە.");
-            }
-        } catch (e) { alert("هەڵە لە گەڕان"); }
+        const snap = await db.collection("Cars").where("number", "==", num).get();
+        if (snap.empty) {
+            alert("نەدۆزرایەوە");
+        } else {
+            const doc = snap.docs[0];
+            const data = doc.data();
+            document.getElementById('docId').value = doc.id;
+            document.getElementById('carLine').value = data.line;
+            document.getElementById('carPrice').value = data.price;
+            document.getElementById('carType').value = data.type;
+            
+            // پیشاندانی دوگمەکان
+            document.getElementById('updateBtn').style.display = 'block';
+            document.getElementById('deleteBtn').style.display = 'block';
+            document.getElementById('saveBtn').style.display = 'none';
+            alert("زانیارییەکان دۆزرانەوە، دەتوانیت نوێی بکەیتەوە یان بیسڕیتەوە");
+        }
+    }
+
+    async function updateData() {
+        const id = document.getElementById('docId').value;
+        if(!id) return;
+        await db.collection("Cars").doc(id).update({
+            number: document.getElementById('carNumber').value.trim(),
+            line: document.getElementById('carLine').value,
+            price: document.getElementById('carPrice').value,
+            type: document.getElementById('carType').value
+        });
+        alert("نوێکرایەوە");
+        clearInputs();
+    }
+
+    async function deleteData() {
+        const id = document.getElementById('docId').value;
+        if(id && confirm("دڵنیای لە سڕینەوە؟")) {
+            await db.collection("Cars").doc(id).delete();
+            alert("سڕایەوە");
+            clearInputs();
+        }
     }
 
     function clearInputs() {
+        document.getElementById('docId').value = "";
         document.getElementById('carNumber').value = "";
         document.getElementById('carLine').selectedIndex = 0;
         document.getElementById('carPrice').selectedIndex = 0;
         document.getElementById('carType').selectedIndex = 0;
+        document.getElementById('updateBtn').style.display = 'none';
+        document.getElementById('deleteBtn').style.display = 'none';
+        document.getElementById('saveBtn').style.display = 'block';
     }
 </script>
-
 </body>
 </html>
