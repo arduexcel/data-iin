@@ -10,66 +10,38 @@
 
     <style>
         :root {
-            --primary: #3498db;
-            --success: #2ecc71;
-            --danger: #e74c3c;
-            --warning: #f1c40f;
-            --dark: #2c3e50;
+            --primary: #3498db; --success: #2ecc71; --danger: #e74c3c; --warning: #f1c40f; --dark: #2c3e50;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, sans-serif;
-            background-color: #f0f2f5;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #f0f2f5;
+            margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh;
         }
 
         .container {
-            max-width: 500px;
-            width: 100%;
-            background: white;
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            max-width: 550px; width: 100%; background: white; padding: 30px; border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1); margin-top: 20px;
         }
 
-        h2 { text-align: center; color: var(--dark); margin-bottom: 25px; }
+        h2 { text-align: center; color: var(--dark); margin-bottom: 25px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
 
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; color: #666; }
 
         input, select {
-            padding: 12px;
-            border: 2px solid #eee;
-            border-radius: 10px;
-            font-size: 16px;
-            width: 100%;
-            box-sizing: border-box;
-            outline: none;
-            transition: 0.3s;
+            padding: 12px; border: 2px solid #eee; border-radius: 10px; font-size: 16px;
+            width: 100%; box-sizing: border-box; outline: none; transition: 0.3s;
         }
 
-        input:focus { border-color: var(--primary); }
+        input:focus { border-color: var(--primary); background-color: #f0f8ff; }
 
         .button-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-top: 20px;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px;
         }
 
         button {
-            padding: 12px;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: bold;
-            color: white;
-            transition: 0.3s;
+            padding: 12px; border: none; border-radius: 10px; cursor: pointer;
+            font-weight: bold; color: white; transition: 0.3s;
         }
 
         .btn-save { background-color: var(--success); grid-column: span 2; }
@@ -78,7 +50,13 @@
         .btn-update { background-color: var(--warning); color: #333; display: none; }
         .btn-delete { background-color: var(--danger); display: none; }
 
-        button:hover { opacity: 0.9; transform: translateY(-1px); }
+        #searchResults { margin-top: 20px; border-top: 2px solid #eee; display: none; }
+        .search-item {
+            background: #f9f9f9; padding: 10px; margin-top: 10px; border-radius: 8px;
+            cursor: pointer; border: 1px solid #ddd; transition: 0.2s;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .search-item:hover { background: #eef7ff; border-color: var(--primary); }
     </style>
 </head>
 <body>
@@ -90,7 +68,7 @@
 
     <div class="form-group">
         <label>ژمارەی ئۆتۆمبێل:</label>
-        <input type="text" id="carNumber" placeholder="ژمارەکە لێرە بنووسە...">
+        <input type="text" id="carNumber" placeholder="ژمارەکە لێرە بنووسە..." autofocus>
     </div>
 
     <div class="form-group">
@@ -140,6 +118,11 @@
         <button class="btn-search" onclick="searchCar()">🔍 گەڕان</button>
         <button class="btn-clear" onclick="clearInputs()">✨ پاککردنەوە</button>
     </div>
+
+    <div id="searchResults">
+        <p style="font-size: 14px; color: #888; margin-top: 15px;">ئەنجامەکان:</p>
+        <div id="resultsList"></div>
+    </div>
 </div>
 
 <script>
@@ -163,7 +146,7 @@
         if(!num || !line || !price || !type) return alert("خانەکان پڕ بکەرەوە");
 
         const dup = await db.collection("Cars").where("number","==",num).where("line","==",line).get();
-        if(!dup.empty) return alert("ئەم ژمارەیە لەم هێڵەدا هەیە!");
+        if(!dup.empty) return alert("ئەم ژمارەیە پێشتر تۆمار کراوە!");
 
         await db.collection("Cars").add({ number: num, line: line, price: price, type: type, time: firebase.firestore.FieldValue.serverTimestamp() });
         alert("خەزن کرا");
@@ -172,25 +155,41 @@
 
     async function searchCar() {
         const num = document.getElementById('carNumber').value.trim();
-        if(!num) return alert("ژمارە بنووسە");
+        if(!num) return alert("بۆ گەڕان ژمارە بنووسە");
 
         const snap = await db.collection("Cars").where("number", "==", num).get();
+        const resultsDiv = document.getElementById('searchResults');
+        const listDiv = document.getElementById('resultsList');
+        listDiv.innerHTML = "";
+        
         if (snap.empty) {
-            alert("نەدۆزرایەوە");
+            resultsDiv.style.display = 'none';
+            alert("هیچ ئەنجامێک نەدۆزرایەوە");
+            document.getElementById('carNumber').focus();
         } else {
-            const doc = snap.docs[0];
-            const data = doc.data();
-            document.getElementById('docId').value = doc.id;
-            document.getElementById('carLine').value = data.line;
-            document.getElementById('carPrice').value = data.price;
-            document.getElementById('carType').value = data.type;
-            
-            // پیشاندانی دوگمەکان
-            document.getElementById('updateBtn').style.display = 'block';
-            document.getElementById('deleteBtn').style.display = 'block';
-            document.getElementById('saveBtn').style.display = 'none';
-            alert("زانیارییەکان دۆزرانەوە، دەتوانیت نوێی بکەیتەوە یان بیسڕیتەوە");
+            resultsDiv.style.display = 'block';
+            snap.forEach(doc => {
+                const data = doc.data();
+                listDiv.innerHTML += `
+                    <div class="search-item" onclick="selectForEdit('${doc.id}', '${data.number}', '${data.line}', '${data.price}', '${data.type}')">
+                        <span><b>${data.line}</b></span>
+                        <span>${data.type} - ${data.price}</span>
+                    </div>`;
+            });
         }
+    }
+
+    function selectForEdit(id, num, line, price, type) {
+        document.getElementById('docId').value = id;
+        document.getElementById('carNumber').value = num;
+        document.getElementById('carLine').value = line;
+        document.getElementById('carPrice').value = price;
+        document.getElementById('carType').value = type;
+        document.getElementById('updateBtn').style.display = 'block';
+        document.getElementById('deleteBtn').style.display = 'block';
+        document.getElementById('saveBtn').style.display = 'none';
+        document.getElementById('searchResults').style.display = 'none';
+        document.getElementById('carNumber').focus();
     }
 
     async function updateData() {
@@ -208,7 +207,7 @@
 
     async function deleteData() {
         const id = document.getElementById('docId').value;
-        if(id && confirm("دڵنیای لە سڕینەوە؟")) {
+        if(id && confirm("دڵنیای؟")) {
             await db.collection("Cars").doc(id).delete();
             alert("سڕایەوە");
             clearInputs();
@@ -224,6 +223,10 @@
         document.getElementById('updateBtn').style.display = 'none';
         document.getElementById('deleteBtn').style.display = 'none';
         document.getElementById('saveBtn').style.display = 'block';
+        document.getElementById('searchResults').style.display = 'none';
+        
+        // ئەم دێڕە خانەکە چالاک دەکاتەوە
+        document.getElementById('carNumber').focus();
     }
 </script>
 </body>
