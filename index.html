@@ -150,7 +150,18 @@
         resetForm(); updateStats();
     }
 
-    function logout() { localStorage.removeItem("terminalUser"); resetForm(); updateStats(); }
+   function logout() {
+    // ١. سڕینەوەی ناوی کارمەند لە مۆبایلەکە یان کۆمپیوتەرەکە
+    localStorage.removeItem("terminalUser");
+    currentUser = "";
+
+    // ٢. شاردنەوەی بەشی سەرەکی و پیشاندانی شاشەی لۆگین بێ ڕیفرێش
+    document.getElementById('main-content').style.display = 'none';
+    document.getElementById('login-overlay').style.display = 'flex';
+    
+    // ٣. بەتاڵکردنەوەی هەڵبژاردنی ناوەکان
+    document.getElementById('userSelect').value = "";
+}
 
     function searchCarLocally(num) {
         if(isParking || !num) return;
