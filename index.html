@@ -282,6 +282,31 @@
         updateStats(); // ئامارەکان نوێ بکەرەوە بێ ڕیفرێش
         document.getElementById('carNumberInput').focus();
 
+// ئەمە فەنکشنە ڕاستەکەیە کە هەموو خانەکان پاک دەکاتەوە
+function resetUI() {
+    document.getElementById('carNumberInput').value = "";
+    document.getElementById('resNote').value = "";
+    document.getElementById('resPrice').value = "";
+    document.getElementById('resType').value = "";
+    document.getElementById('resPhone').value = "";
+    
+    // ئەگەر لەسەر شێوازی پارکینگ بوو، با ناوەکان وەک خۆیان بمێننەوە
+    if (isParking) {
+        document.getElementById('resLine').value = "پارکینگ";
+        document.getElementById('resType').value = "پارکینگ";
+    } else {
+        document.getElementById('resLine').value = "";
+    }
+
+    document.getElementById('btnHalf').style.display = "none";
+    
+    // نوێکردنەوەی ئامارەکان بێ ڕیفرێشکردنی لاپەڕە
+    updateStats(); 
+    
+    // گەڕانەوەی فۆکەس بۆ سەر خانەی ژمارەی سەیارە
+    document.getElementById('carNumberInput').focus();
+}
+    
     function closeReport() { document.getElementById('report-modal').style.display = 'none'; }
     function handleEnter(e) { if(e.key === "Enter") handleAction(); }
 </script>
