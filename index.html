@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ku" dir="rtl">
 <head>
@@ -37,6 +36,27 @@
         }
 
         h2 { text-align: center; margin-bottom: 25px; color: var(--primary); }
+
+        /* --- بەشی ئامارە نوێیەکە --- */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .stat-card {
+            background: var(--light);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            border-bottom: 4px solid var(--primary);
+            transition: 0.3s;
+        }
+        .stat-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .stat-label { display: block; font-size: 13px; color: #666; font-weight: bold; margin-bottom: 5px; }
+        .stat-value { font-size: 24px; font-weight: bold; color: var(--dark); }
+        .stat-taxi { border-bottom-color: var(--warning); }
+        .stat-bus { border-bottom-color: var(--dark); }
 
         .form-grid {
             display: grid;
@@ -123,6 +143,21 @@
 
 <div class="container">
     <h2>بەڕێوەبردنی گواستنەوەی ئۆتۆمبێل</h2>
+
+    <div class="stats-container">
+        <div class="stat-card">
+            <span class="stat-label">کۆی ئۆتۆمبێل</span>
+            <span id="totalCars" class="stat-value">0</span>
+        </div>
+        <div class="stat-card stat-taxi">
+            <span class="stat-label">کۆی تەکسی</span>
+            <span id="totalTaxis" class="stat-value">0</span>
+        </div>
+        <div class="stat-card stat-bus">
+            <span class="stat-label">کۆی پاس</span>
+            <span id="totalBuses" class="stat-value">0</span>
+        </div>
+    </div>
     
     <div class="form-grid">
         <input type="hidden" id="docId">
@@ -198,9 +233,27 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // --- فرمانەکان ---
+    // --- فەنکشنەکان ---
 
-    // ١. خەزن کردن (بە پشکنینی دووبارە نەبوونەوە)
+    // نوێکردنەوەی ئامارەکان
+    function updateStats(querySnapshot) {
+        let total = 0;
+        let taxis = 0;
+        let buses = 0;
+
+        querySnapshot.forEach((doc) => {
+            const car = doc.data();
+            total++;
+            if (car.type === 'تەکسی') taxis++;
+            else if (car.type === 'پاس') buses++;
+        });
+
+        document.getElementById('totalCars').innerText = total;
+        document.getElementById('totalTaxis').innerText = taxis;
+        document.getElementById('totalBuses').innerText = buses;
+    }
+
+    // خەزن کردن
     async function saveData() {
         const num = document.getElementById('carNumber').value.trim();
         const line = document.getElementById('carLine').value;
@@ -210,7 +263,6 @@
         if(!num || !line || !price || !type) return alert("تکایە هەموو خانەکان پڕ بکەرەوە");
 
         try {
-            // پشکنینی دووبارەبوونەوە: ئایا هەمان ژمارە لە هەمان هێڵدا هەیە؟
             const duplicateCheck = await db.collection("Cars")
                 .where("number", "==", num)
                 .where("line", "==", line)
@@ -232,11 +284,15 @@
         } catch (e) { alert("هەڵە: " + e.message); }
     }
 
-    // ٢. نیشاندانی داتا (بە شێوەی ڕاستەوخۆ)
+    // نیشاندانی داتا و نوێکردنەوەی ئامارەکان
     function loadRealtimeData() {
         db.collection("Cars").orderBy("time", "desc").onSnapshot((querySnapshot) => {
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = "";
+            
+            // ئەپدێتکردنی ژمارەکانی سەرەوە
+            updateStats(querySnapshot);
+
             querySnapshot.forEach((doc) => {
                 renderRow(doc);
             });
@@ -258,7 +314,6 @@
         `;
     }
 
-    // ٣. هەڵبژاردنی ڕیز
     function selectRow(id, num, line, price, type, el) {
         document.getElementById('docId').value = id;
         document.getElementById('carNumber').value = num;
@@ -271,7 +326,6 @@
         el.classList.add('selected');
     }
 
-    // ٤. نوێکردنەوە
     async function updateData() {
         const id = document.getElementById('docId').value;
         const num = document.getElementById('carNumber').value.trim();
@@ -280,7 +334,6 @@
         if(!id) return alert("سەرەتا ئۆتۆمبێلێک لە خشتەکە هەڵبژێرە");
 
         try {
-            // لە کاتی نوێکردنەوەش پشکنین دەکەین، بەڵام دەبێت دڵنیابین کە هەمان دۆکیومێنت نییە
             const duplicateCheck = await db.collection("Cars")
                 .where("number", "==", num)
                 .where("line", "==", line)
@@ -304,7 +357,6 @@
         } catch (e) { alert("هەڵە: " + e.message); }
     }
 
-    // ٥. سڕینەوە
     async function deleteData() {
         const id = document.getElementById('docId').value;
         if(!id) return alert("سەرەتا دانەیەک هەڵبژێرە");
@@ -315,7 +367,6 @@
         }
     }
 
-    // ٦. گەڕان
     async function searchData() {
         const num = document.getElementById('carNumber').value.trim();
         const line = document.getElementById('carLine').value;
