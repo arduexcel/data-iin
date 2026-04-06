@@ -230,28 +230,38 @@
         appId: "1:719030469585:web:7a23645b9e684b727dd6f0"
     };
 
-    firebase.initializeApp(firebaseConfig);
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
     const db = firebase.firestore();
 
     // --- فەنکشنەکان ---
 
-    // نوێکردنەوەی ئامارەکان
-    function updateStats(querySnapshot) {
-        let total = 0;
-        let taxis = 0;
-        let buses = 0;
+    // نوێکردنەوەی ئامارەکان بە شێوازێکی هەرزان (تەنها کاتێک پێویست بێت)
+    async function updateStatsOnce() {
+        try {
+            const snapshot = await db.collection("Cars").get();
+            let total = 0;
+            let taxis = 0;
+            let buses = 0;
 
-        querySnapshot.forEach((doc) => {
-            const car = doc.data();
-            total++;
-            if (car.type === 'تەکسی') taxis++;
-            else if (car.type === 'پاس') buses++;
-        });
+            snapshot.forEach((doc) => {
+                const car = doc.data();
+                total++;
+                if (car.type === 'تەکسی') taxis++;
+                else if (car.type === 'پاس') buses++;
+            });
 
-        document.getElementById('totalCars').innerText = total;
-        document.getElementById('totalTaxis').innerText = taxis;
-        document.getElementById('totalBuses').innerText = buses;
+            document.getElementById('totalCars').innerText = total;
+            document.getElementById('totalTaxis').innerText = taxis;
+            document.getElementById('totalBuses').innerText = buses;
+        } catch (e) {
+            console.error("Error updating stats:", e);
+        }
     }
+
+    // لۆدکردنی ئامارەکان لە سەرەتادا
+    window.onload = updateStatsOnce;
 
     // خەزن کردن
     async function saveData() {
@@ -280,38 +290,25 @@
                 time: firebase.firestore.FieldValue.serverTimestamp()
             });
             alert("بە سەرکەوتوویی خەزن کرا");
+            updateStatsOnce();
             clearInputs();
         } catch (e) { alert("هەڵە: " + e.message); }
     }
-
-    // نیشاندانی داتا و نوێکردنەوەی ئامارەکان
-    function loadRealtimeData() {
-        db.collection("Cars").orderBy("time", "desc").onSnapshot((querySnapshot) => {
-            const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = "";
-            
-            // ئەپدێتکردنی ژمارەکانی سەرەوە
-            updateStats(querySnapshot);
-
-            querySnapshot.forEach((doc) => {
-                renderRow(doc);
-            });
-        });
-    }
-    loadRealtimeData();
 
     function renderRow(doc) {
         const car = doc.data();
         const tbody = document.getElementById('tableBody');
         const typeClass = car.type === 'تەکسی' ? 'taxi' : 'bus';
-        tbody.innerHTML += `
-            <tr onclick="selectRow('${doc.id}', '${car.number}', '${car.line}', '${car.price}', '${car.type}', this)">
-                <td><b>${car.number}</b></td>
-                <td>${car.line}</td>
-                <td>${car.price} دینار</td>
-                <td><span class="badge ${typeClass}">${car.type}</span></td>
-            </tr>
+        
+        const row = document.createElement('tr');
+        row.onclick = () => selectRow(doc.id, car.number, car.line, car.price, car.type, row);
+        row.innerHTML = `
+            <td><b>${car.number}</b></td>
+            <td>${car.line}</td>
+            <td>${car.price} دینار</td>
+            <td><span class="badge ${typeClass}">${car.type}</span></td>
         `;
+        tbody.appendChild(row);
     }
 
     function selectRow(id, num, line, price, type, el) {
@@ -334,18 +331,6 @@
         if(!id) return alert("سەرەتا ئۆتۆمبێلێک لە خشتەکە هەڵبژێرە");
 
         try {
-            const duplicateCheck = await db.collection("Cars")
-                .where("number", "==", num)
-                .where("line", "==", line)
-                .get();
-            
-            let isDuplicate = false;
-            duplicateCheck.forEach(doc => {
-                if(doc.id !== id) isDuplicate = true;
-            });
-
-            if(isDuplicate) return alert("ئەم گۆڕانکارییە نابێت چونکە ئەم ژمارەیە پێشتر لەم هێڵەدا هەیە!");
-
             await db.collection("Cars").doc(id).update({
                 number: num,
                 line: line,
@@ -353,6 +338,7 @@
                 type: document.getElementById('carType').value
             });
             alert("نوێکرایەوە");
+            updateStatsOnce();
             clearInputs();
         } catch (e) { alert("هەڵە: " + e.message); }
     }
@@ -363,6 +349,8 @@
 
         if(confirm("دڵنیای لە سڕینەوە؟")) {
             await db.collection("Cars").doc(id).delete();
+            alert("سڕایەوە");
+            updateStatsOnce();
             clearInputs();
         }
     }
@@ -372,11 +360,11 @@
         const line = document.getElementById('carLine').value;
         const tbody = document.getElementById('tableBody');
 
+        if (!num && !line) return alert("خانەیەکی گەڕان پڕ بکەرەوە");
+
         let query = db.collection("Cars");
         if (num) query = query.where("number", "==", num);
         if (line) query = query.where("line", "==", line);
-
-        if (!num && !line) return alert("خانەیەکی گەڕان پڕ بکەرەوە");
 
         try {
             const snapshot = await query.get();
@@ -392,9 +380,9 @@
         document.getElementById('carLine').selectedIndex = 0;
         document.getElementById('carPrice').selectedIndex = 0;
         document.getElementById('carType').selectedIndex = 0;
+        document.getElementById('tableBody').innerHTML = ""; // لیستەکە پاک دەکاتەوە
         const rows = document.querySelectorAll('tr');
         rows.forEach(r => r.classList.remove('selected'));
-        loadRealtimeData();
     }
 </script>
 
